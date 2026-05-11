@@ -1,0 +1,26 @@
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    environment:
+      # Comma-separated list of GitHub namespaces (orgs/users) to hide from the PR list.
+      HIDDEN_NAMESPACES: "guillaumedelre"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
+    secrets:
+      - gh_token
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+secrets:
+  gh_token:
+    file: ./secrets/gh_token

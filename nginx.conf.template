@@ -1,0 +1,27 @@
+server {
+    listen 80;
+
+    location = /api/graphql {
+        proxy_pass            https://api.github.com/graphql;
+        proxy_ssl_server_name on;
+        proxy_set_header      Host                  api.github.com;
+        proxy_set_header      Authorization         "Bearer ${GH_TOKEN}";
+        proxy_set_header      Accept                "application/vnd.github+json";
+        proxy_set_header      X-GitHub-Api-Version  "2022-11-28";
+    }
+
+    location /api/rest/ {
+        rewrite               ^/api/rest/(.*)$       /$1 break;
+        proxy_pass            https://api.github.com;
+        proxy_ssl_server_name on;
+        proxy_set_header      Host                  api.github.com;
+        proxy_set_header      Authorization         "Bearer ${GH_TOKEN}";
+        proxy_set_header      Accept                "application/vnd.github+json";
+        proxy_set_header      X-GitHub-Api-Version  "2022-11-28";
+    }
+
+    location / {
+        root  /usr/share/nginx/html;
+        index index.html;
+    }
+}

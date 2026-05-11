@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Tracker</title>
+    <script src="/config.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --green: #3fb950;
+            --red: #f85149;
+            --yellow: #d29922;
+            --blue: #58a6ff;
+            --gray: #6e7681;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0.875rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        /* ── Stats ── */
+        .stats-bar {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1.25rem 2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 100px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            text-align: center;
+        }
+
+        .stat-card .value { font-size: 1.875rem; font-weight: 700; line-height: 1; }
+        .stat-card .label { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem; text-transform: uppercase; letter-spacing: .04em; }
+
+        .stat-sub {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            margin-top: 0.5rem;
+            padding-top: 0.45rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-sub-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .stat-sub-item .sub-val { font-weight: 600; }
+
+        /* ── Filters ── */
+        .filters {
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .filters::-webkit-scrollbar { display: none; }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+            margin-bottom: -1px;
+        }
+
+        .filter-btn:hover { color: var(--text); }
+
+        .filter-btn[data-filter="open"]   { --fc: var(--blue);  }
+        .filter-btn[data-filter="closed"] { --fc: var(--gray);  }
+        .filter-btn[data-filter="merged"] { --fc: #a371f7;      }
+
+        .filter-btn.active {
+            color: var(--fc);
+            border-bottom-color: var(--fc);
+        }
+
+        .f-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: var(--fc);
+            opacity: 0.45;
+            transition: opacity 0.15s;
+        }
+
+        .filter-btn.active .f-dot { opacity: 1; }
+
+        .f-count {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 0.05rem 0.4rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 1.5rem;
+            text-align: center;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .filter-btn.active .f-count {
+            color: var(--fc);
+            border-color: var(--fc);
+            background: color-mix(in srgb, var(--fc) 12%, transparent);
+        }
+
+        /* ── Main ── */
+        .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+        /* ── Repo group ── */
+        .repo-group { margin-bottom: 2rem; }
+
+        .repo-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .repo-header a { color: var(--blue); text-decoration: none; font-weight: 600; }
+        .repo-header a:hover { text-decoration: underline; }
+        .repo-count { color: var(--text-muted); font-size: 0.875rem; }
+
+        /* ── PR Card ── */
+        .pr-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.875rem 1.25rem;
+            margin-bottom: 0.5rem;
+            display: grid;
+            grid-template-columns: 130px 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .pr-card:hover { border-color: var(--blue); background: var(--surface2); }
+
+        .pr-status { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+
+        .pr-body .title { font-weight: 500; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 600px; }
+
+        .pr-meta { display: flex; align-items: center; gap: 0.875rem; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; }
+
+        .pr-right { display: flex; align-items: center; gap: 0.75rem; }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-draft           { background: rgba(110,118,129,.15); color: var(--gray); border: 1px solid rgba(110,118,129,.3); }
+        .badge-review          { background: rgba(210,153,34,.15);  color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+        .badge-changes         { background: rgba(248,81,73,.15);   color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
+        .badge-approved        { background: rgba(63,185,80,.15);   color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+        .badge-merged          { background: rgba(163,113,247,.15); color: #a371f7;       border: 1px solid rgba(163,113,247,.3); }
+
+        .ci-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .ci-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ci-success { background: var(--green); }
+        .ci-failure { background: var(--red); }
+        .ci-pending { background: var(--yellow); }
+        .ci-none    { background: var(--gray); }
+
+        /* ── Avatars ── */
+        .avatar { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); }
+        .avatar-stack { display: flex; }
+        .avatar-stack .avatar { margin-left: -6px; }
+        .avatar-stack .avatar:first-child { margin-left: 0; }
+
+        /* ── Buttons & Inputs ── */
+        .btn {
+            padding: 0.4rem 0.875rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn:hover { border-color: var(--blue); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* ── Spinner ── */
+        .spinner-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 0; gap: 1rem; }
+        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Misc ── */
+        .hidden { display: none !important; }
+        .diff-plus { color: var(--green); font-size: 0.75rem; }
+        .diff-minus { color: var(--red); font-size: 0.75rem; }
+        .error-msg { color: var(--red); font-size: 0.8rem; margin-top: 0.6rem; }
+
+        code { background: var(--surface2); padding: 0.1em 0.3em; border-radius: 4px; font-size: 0.85em; }
+
+        @media (max-width: 700px) {
+            .pr-card { grid-template-columns: 1fr; }
+            .stats-bar { gap: 0.5rem; }
+            .stat-card .value { font-size: 1.5rem; }
+            header { flex-direction: column; gap: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ APP -->
+<div id="app">
+
+    <header>
+        <div class="header-left">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="var(--blue)">
+                <path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"/>
+            </svg>
+            PR Tracker
+        </div>
+        <div class="header-right">
+            <div style="display:flex;align-items:center;gap:0.5rem">
+                <img id="user-avatar" class="avatar" src="" alt="" style="width:26px;height:26px">
+                <span id="user-login" style="font-size:0.8rem;color:var(--text-muted)"></span>
+            </div>
+            <span id="last-refresh" style="font-size:0.75rem;color:var(--text-muted)"></span>
+            <button class="btn" id="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="value" id="stat-total">-</div>
+            <div class="label">Total open</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(110,118,129,.35)">
+            <div class="value" id="stat-draft" style="color:var(--gray)">-</div>
+            <div class="label">Draft</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(210,153,34,.35)">
+            <div class="value" id="stat-review" style="color:var(--yellow)">-</div>
+            <div class="label">In review</div>
+            <div class="stat-sub">
+                <div class="stat-sub-item">
+                    <span>Changes</span>
+                    <span class="sub-val" id="stat-changes" style="color:var(--red)">-</span>
+                </div>
+                <div class="stat-sub-item">
+                    <span>Approved</span>
+                    <span class="sub-val" id="stat-approved" style="color:var(--green)">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(110,118,129,.35)">
+            <div class="value" id="stat-closed" style="color:var(--gray)">-</div>
+            <div class="label" id="label-closed-year">Closed</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(163,113,247,.35)">
+            <div class="value" id="stat-merged" style="color:#a371f7">-</div>
+            <div class="label" id="label-merged-year">Merged</div>
+        </div>
+    </div>
+
+    <div class="filters">
+        <button class="filter-btn active" data-filter="open" onclick="setFilter('open', this)">
+            <span class="f-dot"></span>Open<span class="f-count" id="fc-open">-</span>
+        </button>
+        <button class="filter-btn" id="filter-closed-btn" data-filter="closed" onclick="setFilter('closed', this)">
+            <span class="f-dot"></span><span id="filter-closed-label">Closed</span><span class="f-count" id="fc-closed">-</span>
+        </button>
+        <button class="filter-btn" id="filter-merged-btn" data-filter="merged" onclick="setFilter('merged', this)">
+            <span class="f-dot"></span><span id="filter-merged-label">Merged</span><span class="f-count" id="fc-merged">-</span>
+        </button>
+    </div>
+
+    <div class="main">
+        <div id="loading" class="spinner-wrap hidden">
+            <div class="spinner"></div>
+            <span style="color:var(--text-muted);font-size:0.875rem">Loading PRs...</span>
+        </div>
+        <div id="pr-list"></div>
+        <div id="empty-state" class="hidden" style="text-align:center;padding:5rem 0;color:var(--text-muted)">
+            <div style="font-size:3rem;margin-bottom:1rem">🎉</div>
+            <div style="font-size:1rem">No PRs for this filter.</div>
+        </div>
+        <div id="global-error" class="hidden" style="text-align:center;padding:4rem 0">
+            <div style="font-size:2rem;margin-bottom:0.75rem">⚠️</div>
+            <div id="global-error-msg" style="color:var(--red);font-size:0.875rem"></div>
+            <button class="btn" style="margin-top:1rem" onclick="loadData()">Retry</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const GH_GRAPHQL = '/api/graphql';
+const GH_REST    = '/api/rest';
+
+let currentUser  = null;
+let currentFilter= 'open';
+let allPRs       = [];
+let mergedPRs    = [];
+let closedPRs    = [];
+
+// ── Boot ──────────────────────────────────────────────────────────────
+(function init() {
+    const year = new Date().getFullYear();
+    document.getElementById('label-merged-year').textContent  = `Merged (${year})`;
+    document.getElementById('filter-merged-label').textContent = `Merged (${year})`;
+    document.getElementById('label-closed-year').textContent  = `Closed (${year})`;
+    document.getElementById('filter-closed-label').textContent = `Closed (${year})`;
+
+    loadData();
+})();
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+}
+
+function relTime(iso) {
+    const diff = Date.now() - new Date(iso);
+    const m = Math.floor(diff / 60000);
+    const h = Math.floor(m / 60);
+    const d = Math.floor(h / 24);
+    if (d > 30) return new Date(iso).toLocaleDateString('en-US');
+    if (d > 0)  return `${d}d ago`;
+    if (h > 0)  return `${h}h ago`;
+    if (m > 0)  return `${m}m ago`;
+    return 'just now';
+}
+
+// ── Data ──────────────────────────────────────────────────────────────
+async function loadData() {
+    setLoading(true);
+    hideError();
+
+    try {
+        const [user, prs, merged, closed] = await Promise.all([fetchUser(), fetchPRs(), fetchMergedPRs(), fetchClosedPRs()]);
+
+        currentUser = user;
+        document.getElementById('user-avatar').src = user.avatar_url;
+        document.getElementById('user-login').textContent = '@' + user.login;
+
+        allPRs    = prs;
+        mergedPRs = merged;
+        closedPRs = closed;
+        updateStats();
+        renderPRs();
+        document.getElementById('last-refresh').textContent =
+            'Updated at ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    } catch (e) {
+        showError(e.message);
+    }
+
+    setLoading(false);
+}
+
+async function fetchUser() {
+    const r = await fetch(`${GH_REST}/user`);
+    if (!r.ok) throw new Error('Failed to fetch user profile.');
+    return r.json();
+}
+
+async function fetchPRs() {
+    const query = `
+        query($after: String) {
+          search(query: "is:pr is:open author:@me sort:updated-desc", type: ISSUE, first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              ... on PullRequest {
+                number
+                title
+                url
+                createdAt
+                updatedAt
+                isDraft
+                reviewDecision
+                additions
+                deletions
+                repository {
+                  nameWithOwner
+                  url
+                  owner { avatarUrl }
+                }
+                reviews(last: 20) {
+                  nodes {
+                    state
+                    author { login avatarUrl }
+                    submittedAt
+                  }
+                }
+                reviewRequests(first: 5) {
+                  nodes {
+                    requestedReviewer {
+                      ... on User { login avatarUrl }
+                    }
+                  }
+                }
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup { state }
+                    }
+                  }
+                }
+                comments { totalCount }
+                labels(first: 5) {
+                  nodes { name color }
+                }
+              }
+            }
+          }
+        }
+    `;
+
+    let prs = [];
+    let cursor = null;
+
+    do {
+        const r = await fetch(GH_GRAPHQL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, variables: { after: cursor } }),
+        });
+
+        if (!r.ok) throw new Error(`GraphQL error (HTTP ${r.status})`);
+        const data = await r.json();
+        if (data.errors) throw new Error(data.errors[0].message);
+
+        const search = data.data.search;
+        prs = prs.concat(search.nodes);
+        cursor = search.pageInfo.hasNextPage ? search.pageInfo.endCursor : null;
+
+    } while (cursor);
+
+    return prs;
+}
+
+async function fetchMergedPRs() {
+    const year  = new Date().getFullYear();
+    const query = `
+        query($after: String) {
+          search(query: "is:pr is:merged author:@me merged:>${year}-01-01 sort:updated-desc", type: ISSUE, first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              ... on PullRequest {
+                number
+                title
+                url
+                createdAt
+                updatedAt
+                mergedAt
+                isDraft
+                reviewDecision
+                additions
+                deletions
+                repository {
+                  nameWithOwner
+                  url
+                  owner { avatarUrl }
+                }
+                reviews(last: 20) {
+                  nodes {
+                    state
+                    author { login avatarUrl }
+                    submittedAt
+                  }
+                }
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup { state }
+                    }
+                  }
+                }
+                comments { totalCount }
+                labels(first: 5) {
+                  nodes { name color }
+                }
+              }
+            }
+          }
+        }
+    `;
+
+    let prs = [];
+    let cursor = null;
+
+    do {
+        const r = await fetch(GH_GRAPHQL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, variables: { after: cursor } }),
+        });
+
+        if (!r.ok) throw new Error(`GraphQL error (merged) (HTTP ${r.status})`);
+        const data = await r.json();
+        if (data.errors) throw new Error(data.errors[0].message);
+
+        const search = data.data.search;
+        prs = prs.concat(search.nodes.map(pr => ({ ...pr, _merged: true })));
+        cursor = search.pageInfo.hasNextPage ? search.pageInfo.endCursor : null;
+
+    } while (cursor);
+
+    return prs;
+}
+
+async function fetchClosedPRs() {
+    const year  = new Date().getFullYear();
+    const query = `
+        query($after: String) {
+          search(query: "is:pr is:closed is:unmerged author:@me closed:>${year}-01-01 sort:updated-desc", type: ISSUE, first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              ... on PullRequest {
+                number
+                title
+                url
+                createdAt
+                updatedAt
+                closedAt
+                isDraft
+                reviewDecision
+                additions
+                deletions
+                repository {
+                  nameWithOwner
+                  url
+                  owner { avatarUrl }
+                }
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup { state }
+                    }
+                  }
+                }
+                comments { totalCount }
+                labels(first: 5) {
+                  nodes { name color }
+                }
+              }
+            }
+          }
+        }
+    `;
+
+    let prs = [];
+    let cursor = null;
+
+    do {
+        const r = await fetch(GH_GRAPHQL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, variables: { after: cursor } }),
+        });
+
+        if (!r.ok) throw new Error(`GraphQL error (closed) (HTTP ${r.status})`);
+        const data = await r.json();
+        if (data.errors) throw new Error(data.errors[0].message);
+
+        const search = data.data.search;
+        prs = prs.concat(search.nodes.map(pr => ({ ...pr, _closed: true })));
+        cursor = search.pageInfo.hasNextPage ? search.pageInfo.endCursor : null;
+
+    } while (cursor);
+
+    return prs;
+}
+
+// ── Status logic ──────────────────────────────────────────────────────
+function getStatus(pr) {
+    if (pr._merged) return 'merged';
+    if (pr._closed) return 'closed';
+    return 'open';
+}
+
+function getReviewDecision(pr) {
+    if (pr.isDraft) return 'draft';
+    switch (pr.reviewDecision) {
+        case 'APPROVED':          return 'approved';
+        case 'CHANGES_REQUESTED': return 'changes_requested';
+        default:                  return 'review_required';
+    }
+}
+
+const STATE_META = {
+    open:   { label: 'Open',   badgeClass: 'badge-review'  },
+    closed: { label: 'Closed', badgeClass: 'badge-draft'   },
+    merged: { label: 'Merged', badgeClass: 'badge-merged'  },
+};
+
+const REVIEW_META = {
+    draft:             { label: 'Draft',             badgeClass: 'badge-draft'    },
+    review_required:   { label: 'In review',         badgeClass: 'badge-review'   },
+    changes_requested: { label: 'Changes requested', badgeClass: 'badge-changes'  },
+    approved:          { label: 'Approved',          badgeClass: 'badge-approved' },
+};
+
+function ciInfo(pr) {
+    const state = pr.commits?.nodes?.[0]?.commit?.statusCheckRollup?.state;
+    switch (state) {
+        case 'SUCCESS': return { cls: 'ci-success', label: 'CI ✓' };
+        case 'FAILURE':
+        case 'ERROR':   return { cls: 'ci-failure', label: 'CI ✗' };
+        case 'PENDING': return { cls: 'ci-pending', label: 'CI…'  };
+        default:        return { cls: 'ci-none',    label: ''      };
+    }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────
+function updateStats() {
+    const counts = { draft: 0, review_required: 0, changes_requested: 0, approved: 0 };
+    allPRs.forEach(pr => counts[getReviewDecision(pr)]++);
+
+    document.getElementById('stat-total').textContent   = allPRs.length;
+    document.getElementById('stat-draft').textContent   = counts.draft;
+    document.getElementById('stat-review').textContent  = counts.review_required + counts.changes_requested + counts.approved;
+    document.getElementById('stat-changes').textContent = counts.changes_requested;
+    document.getElementById('stat-approved').textContent= counts.approved;
+    document.getElementById('stat-closed').textContent  = closedPRs.length;
+    document.getElementById('stat-merged').textContent  = mergedPRs.length;
+
+    document.getElementById('fc-open').textContent   = allPRs.length;
+    document.getElementById('fc-closed').textContent = closedPRs.length;
+    document.getElementById('fc-merged').textContent = mergedPRs.length;
+}
+
+// ── Filter ────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPRs();
+}
+
+// ── Render ────────────────────────────────────────────────────────────
+function renderPRs() {
+    let source;
+    if (currentFilter === 'merged') source = mergedPRs;
+    else if (currentFilter === 'closed') source = closedPRs;
+    else source = allPRs;
+
+    const hiddenNamespaces = window.PR_TRACKER_CONFIG?.hiddenNamespaces ?? [];
+    const filtered = source
+        .filter(pr => {
+            const owner = pr.repository.nameWithOwner.split('/')[0];
+            return !hiddenNamespaces.includes(owner);
+        });
+
+    const list   = document.getElementById('pr-list');
+    const empty  = document.getElementById('empty-state');
+
+    if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+
+    empty.classList.add('hidden');
+
+    // Group by repo (preserving order of first appearance)
+    const byRepo = new Map();
+    filtered.forEach(pr => {
+        const key = pr.repository.nameWithOwner;
+        if (!byRepo.has(key)) byRepo.set(key, { url: pr.repository.url, avatarUrl: pr.repository.owner.avatarUrl, prs: [] });
+        byRepo.get(key).prs.push(pr);
+    });
+
+    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => `
+        <div class="repo-group">
+            <div class="repo-header">
+                <img src="${esc(data.avatarUrl)}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0" alt="">
+                <a href="${esc(data.url)}" target="_blank" rel="noopener">${esc(repo)}</a>
+                <span class="repo-count">${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}</span>
+            </div>
+            ${data.prs.map(renderCard).join('')}
+        </div>
+    `).join('');
+}
+
+function renderCard(pr) {
+    const state = getStatus(pr);
+    const ci    = ciInfo(pr);
+
+    const primaryBadge = state === 'open'
+        ? (() => { const m = REVIEW_META[getReviewDecision(pr)]; return `<span class="badge ${m.badgeClass}">${m.label}</span>`; })()
+        : (() => { const m = STATE_META[state];                  return `<span class="badge ${m.badgeClass}">${m.label}</span>`; })();
+
+    // Deduplicate reviewers, keep latest state per person
+    const reviewerMap = new Map();
+    (pr.reviews?.nodes || []).forEach(r => {
+        const existing = reviewerMap.get(r.author.login);
+        if (!existing || new Date(r.submittedAt) > new Date(existing.submittedAt)) {
+            reviewerMap.set(r.author.login, r);
+        }
+    });
+
+    const avatars = [...reviewerMap.values()].slice(0, 5).map(r => {
+        const stateColor = {
+            APPROVED:          'var(--green)',
+            CHANGES_REQUESTED: 'var(--red)',
+            COMMENTED:         'var(--text-muted)',
+        }[r.state] || 'var(--border)';
+        return `<img class="avatar" src="${esc(r.author.avatarUrl)}" title="${esc(r.author.login)} (${r.state})" style="outline:2px solid ${stateColor}">`;
+    }).join('');
+
+    const requestedReviewers = (pr.reviewRequests?.nodes || [])
+        .filter(n => n.requestedReviewer?.login)
+        .filter(n => !reviewerMap.has(n.requestedReviewer.login))
+        .slice(0, 3)
+        .map(n => `<img class="avatar" src="${esc(n.requestedReviewer.avatarUrl)}" title="${esc(n.requestedReviewer.login)} (requested)" style="opacity:.5;outline:2px solid var(--border)">`)
+        .join('');
+
+    const labels = (pr.labels?.nodes || []).map(l => `
+        <span style="background:#${esc(l.color)}22;color:#${esc(l.color)};border:1px solid #${esc(l.color)}44;padding:.1rem .4rem;border-radius:10px;font-size:.65rem;">${esc(l.name)}</span>
+    `).join('');
+
+    return `
+        <a href="${esc(pr.url)}" target="_blank" rel="noopener" class="pr-card">
+            <div class="pr-status">
+                ${primaryBadge}
+                ${ci.label ? `<span class="ci-badge"><span class="ci-dot ${ci.cls}"></span>${ci.label}</span>` : ''}
+            </div>
+
+            <div class="pr-body">
+                <div class="title">${esc(pr.title)}</div>
+                <div class="pr-meta">
+                    <span style="color:var(--text-muted)">#${pr.number}</span>
+                    <span>${pr._merged ? 'merged' : pr._closed ? 'closed' : 'updated'} ${relTime(pr._merged ? pr.mergedAt : pr._closed ? pr.closedAt : pr.updatedAt)}</span>
+                    <span class="diff-plus">+${pr.additions}</span>
+                    <span class="diff-minus">-${pr.deletions}</span>
+                    ${pr.comments.totalCount > 0 ? `<span>💬 ${pr.comments.totalCount}</span>` : ''}
+                    ${labels}
+                </div>
+            </div>
+
+            <div class="pr-right">
+                ${(avatars || requestedReviewers) ? `<div class="avatar-stack">${avatars}${requestedReviewers}</div>` : ''}
+            </div>
+        </a>
+    `;
+}
+
+// ── UI state ──────────────────────────────────────────────────────────
+function setLoading(v) {
+    document.getElementById('loading').classList.toggle('hidden', !v);
+    document.getElementById('pr-list').classList.toggle('hidden', v);
+    const btn = document.getElementById('refresh-btn');
+    btn.disabled = v;
+    btn.textContent = v ? '⟳ Loading…' : '⟳ Refresh';
+}
+
+function showError(msg) {
+    const el = document.getElementById('global-error');
+    document.getElementById('global-error-msg').textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('pr-list').classList.add('hidden');
+}
+
+function hideError() {
+    document.getElementById('global-error').classList.add('hidden');
+}
+
+// Auto-refresh every 5 minutes
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>

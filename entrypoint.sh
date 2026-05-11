@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+if [ -f /run/secrets/gh_token ]; then
+    export GH_TOKEN=$(cat /run/secrets/gh_token)
+fi
+
+# Build config.js from HIDDEN_NAMESPACES (comma-separated, e.g. "org1,org2")
+if [ -n "${HIDDEN_NAMESPACES:-}" ]; then
+    JSON_ARRAY=$(printf '["%s"]' "$(printf '%s' "$HIDDEN_NAMESPACES" | sed 's/[[:space:]]//g; s/,/","/g')")
+else
+    JSON_ARRAY="[]"
+fi
+
+printf 'window.PR_TRACKER_CONFIG = %s;\n' "{\"hiddenNamespaces\":${JSON_ARRAY}}" \
+    > /usr/share/nginx/html/config.js
+
+exec /docker-entrypoint.sh "$@"
