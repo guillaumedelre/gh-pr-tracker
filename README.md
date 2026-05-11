@@ -2,6 +2,8 @@
 
 A single-page dashboard that lists all GitHub pull requests you have authored, grouped by repository. It runs entirely in a Docker container: nginx serves the static HTML and proxies GitHub API calls server-side, so your token is never exposed to the browser.
 
+![Dashboard screenshot](screenshot.jpg)
+
 ## How it works
 
 ```
