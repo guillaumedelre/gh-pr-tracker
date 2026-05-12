@@ -92,18 +92,17 @@ export function renderPRs() {
 
     empty.classList.add('hidden');
 
+    const visiblePRs = filtered.slice(0, state.currentPage * PAGE_SIZE);
+    const remaining  = filtered.length - visiblePRs.length;
+
     const byRepo = new Map();
-    filtered.forEach(pr => {
+    visiblePRs.forEach(pr => {
         const key = pr.repository.nameWithOwner;
         if (!byRepo.has(key)) byRepo.set(key, { url: pr.repository.url, avatarUrl: pr.repository.owner.avatarUrl, prs: [] });
         byRepo.get(key).prs.push(pr);
     });
 
-    const allEntries     = [...byRepo.entries()];
-    const visibleEntries = allEntries.slice(0, state.currentPage * PAGE_SIZE);
-    const remaining      = allEntries.length - visibleEntries.length;
-
-    list.innerHTML = visibleEntries.map(([repo, data]) => `
+    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => `
         <div class="repo-group">
             <div class="repo-header">
                 <img src="${esc(data.avatarUrl)}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0" alt="">
@@ -117,7 +116,7 @@ export function renderPRs() {
     if (remaining > 0) {
         list.insertAdjacentHTML('beforeend', `
             <div style="text-align:center;padding:1.5rem 0">
-                <button class="btn" onclick="showMore()">Show ${Math.min(PAGE_SIZE, remaining)} more repo${Math.min(PAGE_SIZE, remaining) > 1 ? 's' : ''} (${remaining} remaining)</button>
+                <button class="btn" onclick="showMore()">Show ${Math.min(PAGE_SIZE, remaining)} more PR${Math.min(PAGE_SIZE, remaining) > 1 ? 's' : ''} (${remaining} remaining)</button>
             </div>
         `);
     }

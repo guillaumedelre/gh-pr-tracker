@@ -106,7 +106,7 @@ All variables are read from `.env` at startup via Docker Compose variable substi
 - 🔎 **Filters**: Open / Closed (year) / Merged (year) — tabs at the top of the list
 - 🔍 **Search**: real-time filter by repo name, PR title, or label (case-insensitive, works across all tabs)
 - 🃏 **PR cards**: review status badge, CI status dot, reviewer avatars with review-state color, diff stats, GitHub labels, relative timestamp
-- 📄 **Pagination**: 10 repo groups per page, "Show more" button to load the next batch
+- 📄 **Pagination**: 10 PRs per page, "Show more" button to load the next batch
 - 🔄 **Auto-refresh**: configurable interval via `REFRESH_INTERVAL` (default: 5 minutes)
 - 🔔 **Browser notifications**: click the 🔕 button in the header to enable. A notification fires on CI status change (passed/failed) or review decision change (approved/changes requested). No notification on the first load.
 
