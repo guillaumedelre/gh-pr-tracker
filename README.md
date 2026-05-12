@@ -92,7 +92,8 @@ docker compose down
 - 📊 **Stats bar**: total open PRs, draft count, in-review count (with changes-requested and approved sub-counts), closed and merged counts for the current year
 - 🔎 **Filters**: Open / Closed (year) / Merged (year)
 - 🃏 **PR cards**: review status badge, CI status dot, reviewer avatars with review-state color, diff stats, GitHub labels, relative timestamp
-- 🔄 **Auto-refresh**: every 5 minutes
+- 🔄 **Auto-refresh**: every 5 minutes (configurable via `REFRESH_INTERVAL`)
+- 🔔 **Browser notifications**: click the 🔕 button in the header to enable. A notification fires when a PR's CI status or review decision changes between two refreshes (CI passed, CI failed, approved, changes requested). No notification is sent on the first load.
 
 ---
 
