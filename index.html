@@ -385,6 +385,19 @@ let closedPRs    = [];
 })();
 
 // ── Helpers ───────────────────────────────────────────────────────────
+function assertOk(r) {
+    if (r.status === 401) throw new Error('Invalid or expired GitHub token. Update secrets/gh_token and restart the container.');
+    if (r.status === 403) throw new Error('GitHub token lacks required permissions (Pull requests: read + Metadata: read).');
+    if (!r.ok) throw new Error(`Unexpected HTTP ${r.status} from GitHub API.`);
+}
+
+function assertGql(data) {
+    if (!data.errors) return;
+    const err = data.errors[0];
+    if (err.type === 'INSUFFICIENT_SCOPES') throw new Error('GitHub token lacks required permissions (Pull requests: read + Metadata: read).');
+    throw new Error(err.message);
+}
+
 function esc(s) {
     return String(s)
         .replace(/&/g,'&amp;')
@@ -434,7 +447,7 @@ async function loadData() {
 
 async function fetchUser() {
     const r = await fetch(`${GH_REST}/user`);
-    if (!r.ok) throw new Error('Failed to fetch user profile.');
+    assertOk(r);
     return r.json();
 }
 
@@ -500,9 +513,9 @@ async function fetchPRs() {
             body: JSON.stringify({ query, variables: { after: cursor } }),
         });
 
-        if (!r.ok) throw new Error(`GraphQL error (HTTP ${r.status})`);
+        assertOk(r);
         const data = await r.json();
-        if (data.errors) throw new Error(data.errors[0].message);
+        assertGql(data);
 
         const search = data.data.search;
         prs = prs.concat(search.nodes);
@@ -570,9 +583,9 @@ async function fetchMergedPRs() {
             body: JSON.stringify({ query, variables: { after: cursor } }),
         });
 
-        if (!r.ok) throw new Error(`GraphQL error (merged) (HTTP ${r.status})`);
+        assertOk(r);
         const data = await r.json();
-        if (data.errors) throw new Error(data.errors[0].message);
+        assertGql(data);
 
         const search = data.data.search;
         prs = prs.concat(search.nodes.map(pr => ({ ...pr, _merged: true })));
@@ -633,9 +646,9 @@ async function fetchClosedPRs() {
             body: JSON.stringify({ query, variables: { after: cursor } }),
         });
 
-        if (!r.ok) throw new Error(`GraphQL error (closed) (HTTP ${r.status})`);
+        assertOk(r);
         const data = await r.json();
-        if (data.errors) throw new Error(data.errors[0].message);
+        assertGql(data);
 
         const search = data.data.search;
         prs = prs.concat(search.nodes.map(pr => ({ ...pr, _closed: true })));
