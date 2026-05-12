@@ -5,7 +5,7 @@ import { detectChanges, updateNotifBtn, requestNotifications } from './notificat
 
 // ── Data ──────────────────────────────────────────────────────────────
 async function loadData() {
-    state.currentPage = 1;
+    state.expandedRepos.clear();
     setLoading(true);
     hideError();
 
@@ -37,7 +37,7 @@ async function loadData() {
 // ── Filter / Search ───────────────────────────────────────────────────
 function setFilter(f, btn) {
     state.currentFilter = f;
-    state.currentPage   = 1;
+    state.expandedRepos.clear();
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderPRs();
@@ -45,12 +45,12 @@ function setFilter(f, btn) {
 
 function setSearch(q) {
     state.searchQuery = q;
-    state.currentPage = 1;
+    state.expandedRepos.clear();
     renderPRs();
 }
 
-function showMore() {
-    state.currentPage++;
+function showMoreInRepo(repoKey) {
+    state.expandedRepos.add(repoKey);
     renderPRs();
 }
 
@@ -75,10 +75,10 @@ function hideError() {
 }
 
 // ── Expose for HTML inline handlers ──────────────────────────────────
-window.loadData            = loadData;
-window.setFilter           = setFilter;
-window.setSearch           = setSearch;
-window.showMore            = showMore;
+window.loadData             = loadData;
+window.setFilter            = setFilter;
+window.setSearch            = setSearch;
+window.showMoreInRepo       = showMoreInRepo;
 window.requestNotifications = requestNotifications;
 
 // ── Boot ──────────────────────────────────────────────────────────────

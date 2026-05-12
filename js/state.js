@@ -1,8 +1,8 @@
 export const state = {
     currentUser:   null,
     currentFilter: 'open',
-    currentPage:   1,
     searchQuery:   '',
+    expandedRepos: new Set(),
     allPRs:        [],
     mergedPRs:     [],
     closedPRs:     [],

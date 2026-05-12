@@ -99,28 +99,26 @@ export function renderPRs() {
         byRepo.get(key).prs.push(pr);
     });
 
-    const allEntries     = [...byRepo.entries()];
-    const visibleEntries = allEntries.slice(0, state.currentPage * PAGE_SIZE);
-    const remaining      = allEntries.length - visibleEntries.length;
+    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => {
+        const expanded   = state.expandedRepos.has(repo);
+        const visible    = expanded ? data.prs : data.prs.slice(0, PAGE_SIZE);
+        const hiddenCount = data.prs.length - visible.length;
 
-    list.innerHTML = visibleEntries.map(([repo, data]) => `
+        return `
         <div class="repo-group">
             <div class="repo-header">
                 <img src="${esc(data.avatarUrl)}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0" alt="">
                 <a href="${esc(data.url)}" target="_blank" rel="noopener">${esc(repo)}</a>
                 <span class="repo-count">${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}</span>
             </div>
-            ${data.prs.map(renderCard).join('')}
-        </div>
-    `).join('');
-
-    if (remaining > 0) {
-        list.insertAdjacentHTML('beforeend', `
-            <div style="text-align:center;padding:1.5rem 0">
-                <button class="btn" onclick="showMore()">Show ${Math.min(PAGE_SIZE, remaining)} more repo${Math.min(PAGE_SIZE, remaining) > 1 ? 's' : ''} (${remaining} remaining)</button>
-            </div>
-        `);
-    }
+            ${visible.map(renderCard).join('')}
+            ${hiddenCount > 0 ? `
+                <div style="text-align:center;padding:0.75rem 0">
+                    <button class="btn" onclick="showMoreInRepo('${esc(repo)}')">Show ${hiddenCount} more PR${hiddenCount > 1 ? 's' : ''}</button>
+                </div>
+            ` : ''}
+        </div>`;
+    }).join('');
 }
 
 function renderCard(pr) {
