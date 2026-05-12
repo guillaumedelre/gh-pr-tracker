@@ -2,7 +2,7 @@ services:
   web:
     image: nginx:alpine
     ports:
-      - "8080:80"
+      - "${PORT:-8080}:80"
     environment:
       # Comma-separated list of GitHub namespaces (orgs/users) to hide from the PR list.
       HIDDEN_NAMESPACES: "guillaumedelre"
