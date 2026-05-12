@@ -688,20 +688,27 @@ function ciInfo(pr) {
 
 // ── Stats ─────────────────────────────────────────────────────────────
 function updateStats() {
-    const counts = { draft: 0, review_required: 0, changes_requested: 0, approved: 0 };
-    allPRs.forEach(pr => counts[getReviewDecision(pr)]++);
+    const hiddenNamespaces = window.PR_TRACKER_CONFIG?.hiddenNamespaces ?? [];
+    const isVisible = pr => !hiddenNamespaces.includes(pr.repository.nameWithOwner.split('/')[0]);
 
-    document.getElementById('stat-total').textContent   = allPRs.length;
+    const visibleOpen   = allPRs.filter(isVisible);
+    const visibleClosed = closedPRs.filter(isVisible);
+    const visibleMerged = mergedPRs.filter(isVisible);
+
+    const counts = { draft: 0, review_required: 0, changes_requested: 0, approved: 0 };
+    visibleOpen.forEach(pr => counts[getReviewDecision(pr)]++);
+
+    document.getElementById('stat-total').textContent   = visibleOpen.length;
     document.getElementById('stat-draft').textContent   = counts.draft;
     document.getElementById('stat-review').textContent  = counts.review_required + counts.changes_requested + counts.approved;
     document.getElementById('stat-changes').textContent = counts.changes_requested;
     document.getElementById('stat-approved').textContent= counts.approved;
-    document.getElementById('stat-closed').textContent  = closedPRs.length;
-    document.getElementById('stat-merged').textContent  = mergedPRs.length;
+    document.getElementById('stat-closed').textContent  = visibleClosed.length;
+    document.getElementById('stat-merged').textContent  = visibleMerged.length;
 
-    document.getElementById('fc-open').textContent   = allPRs.length;
-    document.getElementById('fc-closed').textContent = closedPRs.length;
-    document.getElementById('fc-merged').textContent = mergedPRs.length;
+    document.getElementById('fc-open').textContent   = visibleOpen.length;
+    document.getElementById('fc-closed').textContent = visibleClosed.length;
+    document.getElementById('fc-merged').textContent = visibleMerged.length;
 }
 
 // ── Filter ────────────────────────────────────────────────────────────
