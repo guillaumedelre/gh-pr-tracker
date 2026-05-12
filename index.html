@@ -262,6 +262,21 @@
         .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── Search ── */
+        .search-input {
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font-size: 0.8rem;
+            width: 200px;
+            transition: border-color 0.15s, width 0.2s;
+            outline: none;
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus { border-color: var(--blue); width: 260px; }
+
         /* ── Misc ── */
         .hidden { display: none !important; }
         .diff-plus { color: var(--green); font-size: 0.75rem; }
@@ -334,16 +349,21 @@
         </div>
     </div>
 
-    <div class="filters">
-        <button class="filter-btn active" data-filter="open" onclick="setFilter('open', this)">
-            <span class="f-dot"></span>Open<span class="f-count" id="fc-open">-</span>
-        </button>
-        <button class="filter-btn" id="filter-closed-btn" data-filter="closed" onclick="setFilter('closed', this)">
-            <span class="f-dot"></span><span id="filter-closed-label">Closed</span><span class="f-count" id="fc-closed">-</span>
-        </button>
-        <button class="filter-btn" id="filter-merged-btn" data-filter="merged" onclick="setFilter('merged', this)">
-            <span class="f-dot"></span><span id="filter-merged-label">Merged</span><span class="f-count" id="fc-merged">-</span>
-        </button>
+    <div class="filters" style="justify-content:space-between">
+        <div style="display:flex">
+            <button class="filter-btn active" data-filter="open" onclick="setFilter('open', this)">
+                <span class="f-dot"></span>Open<span class="f-count" id="fc-open">-</span>
+            </button>
+            <button class="filter-btn" id="filter-closed-btn" data-filter="closed" onclick="setFilter('closed', this)">
+                <span class="f-dot"></span><span id="filter-closed-label">Closed</span><span class="f-count" id="fc-closed">-</span>
+            </button>
+            <button class="filter-btn" id="filter-merged-btn" data-filter="merged" onclick="setFilter('merged', this)">
+                <span class="f-dot"></span><span id="filter-merged-label">Merged</span><span class="f-count" id="fc-merged">-</span>
+            </button>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 0.75rem">
+            <input id="search-input" class="search-input" type="search" placeholder="Filter by repo, title or label…" oninput="setSearch(this.value)">
+        </div>
     </div>
 
     <div class="main">
@@ -371,6 +391,7 @@ const GH_REST    = '/api/rest';
 let currentUser  = null;
 let currentFilter= 'open';
 let currentPage  = 1;
+let searchQuery  = '';
 const PAGE_SIZE  = 10;
 let allPRs       = [];
 let mergedPRs    = [];
@@ -740,6 +761,12 @@ function setFilter(f, btn) {
     renderPRs();
 }
 
+function setSearch(q) {
+    searchQuery = q;
+    currentPage = 1;
+    renderPRs();
+}
+
 // ── Render ────────────────────────────────────────────────────────────
 function renderPRs() {
     let source;
@@ -748,10 +775,15 @@ function renderPRs() {
     else source = allPRs;
 
     const hiddenNamespaces = window.PR_TRACKER_CONFIG?.hiddenNamespaces ?? [];
+    const q = searchQuery.toLowerCase().trim();
     const filtered = source
         .filter(pr => {
             const owner = pr.repository.nameWithOwner.split('/')[0];
-            return !hiddenNamespaces.includes(owner);
+            if (hiddenNamespaces.includes(owner)) return false;
+            if (!q) return true;
+            return pr.repository.nameWithOwner.toLowerCase().includes(q)
+                || pr.title.toLowerCase().includes(q)
+                || (pr.labels?.nodes || []).some(l => l.name.toLowerCase().includes(q));
         });
 
     const list   = document.getElementById('pr-list');
