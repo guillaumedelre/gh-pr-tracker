@@ -80,6 +80,7 @@ docker compose down
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
+| `PORT` | No | `8080` | Host port exposed by the container |
 | `HIDDEN_NAMESPACES` | No | `""` | Comma-separated GitHub namespaces (users/orgs) to exclude from the dashboard |
 
 > The GitHub token is not an environment variable: it is read from the Docker secret at `secrets/gh_token` (see [Docker Compose secrets][compose-secrets]).
