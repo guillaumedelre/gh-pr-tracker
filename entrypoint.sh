@@ -17,7 +17,10 @@ else
     JSON_ARRAY="[]"
 fi
 
-printf 'window.PR_TRACKER_CONFIG = %s;\n' "{\"hiddenNamespaces\":${JSON_ARRAY}}" \
+REFRESH_INTERVAL="${REFRESH_INTERVAL:-300}"
+
+printf 'window.PR_TRACKER_CONFIG = %s;\n' \
+    "{\"hiddenNamespaces\":${JSON_ARRAY},\"refreshInterval\":${REFRESH_INTERVAL}}" \
     > /usr/share/nginx/html/config.js
 
 exec /docker-entrypoint.sh "$@"

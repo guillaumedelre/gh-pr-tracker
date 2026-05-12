@@ -4,8 +4,10 @@ services:
     ports:
       - "${PORT:-8080}:80"
     environment:
+      # Auto-refresh interval in seconds (default: 300 = 5 minutes).
+      REFRESH_INTERVAL: "${REFRESH_INTERVAL:-300}"
       # Comma-separated list of GitHub namespaces (orgs/users) to hide from the PR list.
-      HIDDEN_NAMESPACES: "guillaumedelre"
+      HIDDEN_NAMESPACES: "${HIDDEN_NAMESPACES:-}"
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html:ro
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
