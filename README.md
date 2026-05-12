@@ -103,6 +103,23 @@ docker compose down
 
 ---
 
+## 🔄 Updating
+
+Pull the latest changes, then apply them depending on what changed:
+
+```bash
+git pull
+```
+
+| What changed | Action required |
+|---|---|
+| `index.html` only | Hard-refresh the browser (`Ctrl+Shift+R`) — no restart needed |
+| `entrypoint.sh`, `compose.yaml`, `nginx.conf.template` | `docker compose down && docker compose up -d` |
+
+Your token (`secrets/gh_token`) and your `HIDDEN_NAMESPACES` configuration are never touched by an update.
+
+---
+
 ## 🧑‍💻 Development
 
 The entire frontend is a single file: `index.html`. There is no build step. Edit it directly and refresh the browser. The container must be running for API calls to work.
