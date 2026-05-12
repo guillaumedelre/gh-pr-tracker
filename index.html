@@ -926,8 +926,8 @@ function detectChanges(prs) {
     });
 }
 
-// Auto-refresh every 5 minutes
-setInterval(loadData, 5 * 60 * 1000);
+const refreshInterval = (window.PR_TRACKER_CONFIG?.refreshInterval ?? 300) * 1000;
+setInterval(loadData, refreshInterval);
 </script>
 </body>
 </html>

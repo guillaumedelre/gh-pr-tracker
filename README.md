@@ -49,16 +49,20 @@ echo -n "ghp_your_token_here" > secrets/gh_token
 
 > ⚠️ The `secrets/` directory is gitignored. Never commit this file.
 
-### 3. Configure namespaces to hide (optional)
+### 3. Configure environment variables (optional)
 
-Edit `compose.yaml` and set `HIDDEN_NAMESPACES` to a comma-separated list of GitHub usernames or organization names to exclude from the dashboard:
+Copy the example file and edit it:
 
-```yaml
-environment:
-  HIDDEN_NAMESPACES: "your-login,your-personal-org"
+```bash
+cp .env.example .env
 ```
 
-Leave it empty (`""`) to show all PRs.
+| Variable | Default | Description |
+|---|---|---|
+| `REFRESH_INTERVAL` | `300` | Auto-refresh interval in seconds |
+| `HIDDEN_NAMESPACES` | `""` | Comma-separated GitHub namespaces (users/orgs) to hide from the dashboard |
+
+`.env` is gitignored and never committed.
 
 ### 4. Start the container
 
@@ -81,9 +85,10 @@ docker compose down
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `PORT` | No | `8080` | Host port exposed by the container |
+| `REFRESH_INTERVAL` | No | `300` | Auto-refresh interval in seconds |
 | `HIDDEN_NAMESPACES` | No | `""` | Comma-separated GitHub namespaces (users/orgs) to exclude from the dashboard |
 
-> The GitHub token is not an environment variable: it is read from the Docker secret at `secrets/gh_token` (see [Docker Compose secrets][compose-secrets]).
+Variables are read from `.env` (see step 3 of Setup). The GitHub token is not an environment variable: it is read from the Docker secret at `secrets/gh_token` (see [Docker Compose secrets][compose-secrets]).
 
 ---
 
