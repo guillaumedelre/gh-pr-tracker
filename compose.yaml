@@ -10,6 +10,7 @@ services:
       HIDDEN_NAMESPACES: "${HIDDEN_NAMESPACES:-}"
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./js:/usr/share/nginx/html/js:ro
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
