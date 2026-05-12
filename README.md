@@ -1,10 +1,12 @@
-# PR Tracker
+# 🔍 PR Tracker
 
-A single-page dashboard that lists all GitHub pull requests you have authored, grouped by repository. It runs entirely in a Docker container: nginx serves the static HTML and proxies GitHub API calls server-side, so your token is never exposed to the browser.
+> Single-page GitHub PR dashboard. No framework, no build step, no dependencies beyond Docker.
 
 ![Dashboard screenshot](screenshot.jpg)
 
-## How it works
+---
+
+## ⚙️ How it works
 
 ```
 Browser  ──GET /──────────────────►  nginx (port 8080)
@@ -18,12 +20,18 @@ The [GitHub GraphQL API][gh-graphql] is used to fetch open, merged, and closed P
 
 A small `config.js` file is generated at container startup from environment variables and served as a static asset alongside `index.html`.
 
-## Prerequisites
+---
 
-- Docker with the Compose plugin (`docker compose version`)
-- A GitHub [Personal Access Token][gh-pat] with the `repo` scope (classic token) or fine-grained permissions: **Pull requests: read**, **Metadata: read**
+## 📋 Prerequisites
 
-## Setup
+- **Docker** with the Compose plugin (`docker compose version`)
+- A GitHub [Personal Access Token][gh-pat] with:
+  - Classic token: `repo` scope
+  - Fine-grained token: **Pull requests: read** + **Metadata: read**
+
+---
+
+## 🚀 Setup
 
 ### 1. Clone the repository
 
@@ -39,11 +47,11 @@ mkdir -p secrets
 echo -n "ghp_your_token_here" > secrets/gh_token
 ```
 
-The `secrets/` directory is gitignored. Never commit this file.
+> ⚠️ The `secrets/` directory is gitignored. Never commit this file.
 
 ### 3. Configure namespaces to hide (optional)
 
-Edit `compose.yaml` and set `HIDDEN_NAMESPACES` to a comma-separated list of GitHub usernames or organization names whose repositories should not appear in the dashboard:
+Edit `compose.yaml` and set `HIDDEN_NAMESPACES` to a comma-separated list of GitHub usernames or organization names to exclude from the dashboard:
 
 ```yaml
 environment:
@@ -66,28 +74,36 @@ Open [http://localhost:8080](http://localhost:8080).
 docker compose down
 ```
 
-## Configuration reference
+---
+
+## 🛠️ Configuration reference
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `HIDDEN_NAMESPACES` | No | `""` | Comma-separated GitHub namespaces (users/orgs) to exclude. Example: `"alice,my-company"` |
+| `HIDDEN_NAMESPACES` | No | `""` | Comma-separated GitHub namespaces (users/orgs) to exclude from the dashboard |
 
-The GitHub token is not an environment variable: it is read from the Docker secret at `secrets/gh_token` (see [Docker Compose secrets][compose-secrets]).
+> The GitHub token is not an environment variable: it is read from the Docker secret at `secrets/gh_token` (see [Docker Compose secrets][compose-secrets]).
 
-## Dashboard features
+---
 
-- **Stats bar**: total open PRs, draft count, in-review count (with changes-requested and approved sub-counts), closed and merged counts for the current year
-- **Filters**: Open / Closed (year) / Merged (year)
-- **PR cards**: review status badge, CI status dot, reviewer avatars with review-state color, diff stats, GitHub labels, relative timestamp
-- **Auto-refresh**: every 5 minutes
+## ✨ Dashboard features
 
-## Security notes
+- 📊 **Stats bar**: total open PRs, draft count, in-review count (with changes-requested and approved sub-counts), closed and merged counts for the current year
+- 🔎 **Filters**: Open / Closed (year) / Merged (year)
+- 🃏 **PR cards**: review status badge, CI status dot, reviewer avatars with review-state color, diff stats, GitHub labels, relative timestamp
+- 🔄 **Auto-refresh**: every 5 minutes
+
+---
+
+## 🔒 Security notes
 
 - The GitHub token is stored as a Docker secret and loaded into the nginx process environment only. It is injected as an HTTP header by nginx and never sent to the browser.
 - `secrets/` is gitignored. Do not add any token or credential file outside that directory.
 - The dashboard is intended for local or internal network use. There is no authentication layer in front of it.
 
-## Development
+---
+
+## 🧑‍💻 Development
 
 The entire frontend is a single file: `index.html`. There is no build step. Edit it directly and refresh the browser. The container must be running for API calls to work.
 
@@ -97,7 +113,7 @@ To restart the container after changing `entrypoint.sh`, `compose.yaml`, or `ngi
 docker compose down && docker compose up -d
 ```
 
-Changes to `index.html` are picked up immediately without restarting (it is bind-mounted read-only).
+> Changes to `index.html` are picked up immediately without restarting (it is bind-mounted read-only).
 
 ---
 
