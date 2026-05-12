@@ -92,34 +92,33 @@ export function renderPRs() {
 
     empty.classList.add('hidden');
 
-    const visiblePRs = filtered.slice(0, state.currentPage * PAGE_SIZE);
-    const remaining  = filtered.length - visiblePRs.length;
-
     const byRepo = new Map();
-    visiblePRs.forEach(pr => {
+    filtered.forEach(pr => {
         const key = pr.repository.nameWithOwner;
         if (!byRepo.has(key)) byRepo.set(key, { url: pr.repository.url, avatarUrl: pr.repository.owner.avatarUrl, prs: [] });
         byRepo.get(key).prs.push(pr);
     });
 
-    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => `
+    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => {
+        const expanded   = state.expandedRepos.has(repo);
+        const visible    = expanded ? data.prs : data.prs.slice(0, PAGE_SIZE);
+        const hiddenCount = data.prs.length - visible.length;
+
+        return `
         <div class="repo-group">
             <div class="repo-header">
                 <img src="${esc(data.avatarUrl)}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0" alt="">
                 <a href="${esc(data.url)}" target="_blank" rel="noopener">${esc(repo)}</a>
                 <span class="repo-count">${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}</span>
             </div>
-            ${data.prs.map(renderCard).join('')}
-        </div>
-    `).join('');
-
-    if (remaining > 0) {
-        list.insertAdjacentHTML('beforeend', `
-            <div style="text-align:center;padding:1.5rem 0">
-                <button class="btn" onclick="showMore()">Show ${Math.min(PAGE_SIZE, remaining)} more PR${Math.min(PAGE_SIZE, remaining) > 1 ? 's' : ''} (${remaining} remaining)</button>
-            </div>
-        `);
-    }
+            ${visible.map(renderCard).join('')}
+            ${hiddenCount > 0 ? `
+                <div style="text-align:center;padding:0.75rem 0">
+                    <button class="btn" onclick="showMoreInRepo('${esc(repo)}')">Show ${hiddenCount} more PR${hiddenCount > 1 ? 's' : ''}</button>
+                </div>
+            ` : ''}
+        </div>`;
+    }).join('');
 }
 
 function renderCard(pr) {
