@@ -370,6 +370,8 @@ const GH_REST    = '/api/rest';
 
 let currentUser  = null;
 let currentFilter= 'open';
+let currentPage  = 1;
+const PAGE_SIZE  = 10;
 let allPRs       = [];
 let mergedPRs    = [];
 let closedPRs    = [];
@@ -423,6 +425,7 @@ function relTime(iso) {
 
 // ── Data ──────────────────────────────────────────────────────────────
 async function loadData() {
+    currentPage = 1;
     setLoading(true);
     hideError();
 
@@ -731,6 +734,7 @@ function updateStats() {
 // ── Filter ────────────────────────────────────────────────────────────
 function setFilter(f, btn) {
     currentFilter = f;
+    currentPage = 1;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderPRs();
@@ -769,7 +773,11 @@ function renderPRs() {
         byRepo.get(key).prs.push(pr);
     });
 
-    list.innerHTML = [...byRepo.entries()].map(([repo, data]) => `
+    const allEntries     = [...byRepo.entries()];
+    const visibleEntries = allEntries.slice(0, currentPage * PAGE_SIZE);
+    const remaining      = allEntries.length - visibleEntries.length;
+
+    list.innerHTML = visibleEntries.map(([repo, data]) => `
         <div class="repo-group">
             <div class="repo-header">
                 <img src="${esc(data.avatarUrl)}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0" alt="">
@@ -779,6 +787,19 @@ function renderPRs() {
             ${data.prs.map(renderCard).join('')}
         </div>
     `).join('');
+
+    if (remaining > 0) {
+        list.insertAdjacentHTML('beforeend', `
+            <div style="text-align:center;padding:1.5rem 0">
+                <button class="btn" onclick="showMore()">Show ${Math.min(PAGE_SIZE, remaining)} more repo${Math.min(PAGE_SIZE, remaining) > 1 ? 's' : ''} (${remaining} remaining)</button>
+            </div>
+        `);
+    }
+}
+
+function showMore() {
+    currentPage++;
+    renderPRs();
 }
 
 function renderCard(pr) {
